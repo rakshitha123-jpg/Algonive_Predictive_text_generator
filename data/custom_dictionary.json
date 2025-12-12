@@ -1,0 +1,30 @@
+{
+  "words": [
+    "pytorch",
+    "nodejs",
+    "tensorflow",
+    "react",
+    "javascript",
+    "github",
+    "vscode",
+    "docker",
+    "kubernetes",
+    "azure",
+    "python",
+    "aws"
+  ],
+  "frequencies": {
+    "python": 10,
+    "javascript": 8,
+    "react": 7,
+    "nodejs": 6,
+    "tensorflow": 5,
+    "pytorch": 5,
+    "github": 9,
+    "vscode": 8,
+    "docker": 6,
+    "kubernetes": 4,
+    "aws": 7,
+    "azure": 5
+  }
+}

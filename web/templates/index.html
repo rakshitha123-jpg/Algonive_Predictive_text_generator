@@ -1,0 +1,475 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictive Text Generator</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .main-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 30px;
+            margin: 20px auto;
+            max-width: 1200px;
+        }
+        .prediction-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .prediction-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .prediction-item {
+            display: inline-block;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            padding: 12px 20px;
+            margin: 8px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 3px 10px rgba(76, 175, 80, 0.3);
+        }
+        .prediction-item:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.5);
+            background: linear-gradient(45deg, #45a049, #4CAF50);
+        }
+        .probability {
+            font-size: 0.8em;
+            opacity: 0.9;
+            margin-left: 5px;
+        }
+        .text-input {
+            font-size: 18px;
+            padding: 20px;
+            border: 3px solid #e0e0e0;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            background: #fafafa;
+        }
+        .text-input:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+            background: white;
+        }
+        .generated-text {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            padding: 20px;
+            border-radius: 15px;
+            border-left: 5px solid #4CAF50;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 100px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .dictionary-word {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 0.9em;
+            font-weight: 500;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.3);
+            transition: all 0.3s ease;
+        }
+        .dictionary-word:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 107, 107, 0.5);
+        }
+        .btn-custom {
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .btn-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .header-title {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+            font-size: 3rem;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .section-title {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section-title i {
+            color: #4CAF50;
+        }
+        .model-selector {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 8px 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .model-selector:focus {
+            border-color: #4CAF50;
+            box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4CAF50;
+            margin-left: 10px;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        .loading-spinner {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        .loading-spinner.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-12">
+                <div class="main-container">
+                    <h1 class="header-title">
+                        <i class="fas fa-robot"></i> Predictive Text Generator
+                    </h1>
+                    <p class="text-center text-muted mb-5">
+                        <i class="fas fa-magic"></i> AI-powered text prediction using advanced N-gram models
+                        <span class="status-indicator"></span>
+                    </p>
+                
+                <!-- Text Input Section -->
+                <div class="prediction-card">
+                    <h3 class="section-title">
+                        <i class="fas fa-keyboard"></i> Type your text:
+                    </h3>
+                    <textarea id="textInput" class="form-control text-input" rows="3" 
+                              placeholder="Start typing to see real-time predictions..."></textarea>
+                    
+                    <div class="mt-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-brain"></i> Model Type:
+                                </label>
+                                <select id="modelType" class="form-select model-selector">
+                                    <option value="bigram">Bigram Model</option>
+                                    <option value="trigram">Trigram Model</option>
+                                    <option value="context">Context-Aware</option>
+                                    <option value="combined">Combined Suggestions</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <div class="btn-group" role="group">
+                                    <button id="predictBtn" class="btn btn-primary btn-custom">
+                                        <i class="fas fa-search"></i> Predict
+                                    </button>
+                                    <button id="generateBtn" class="btn btn-success btn-custom">
+                                        <i class="fas fa-magic"></i> Generate
+                                    </button>
+                                    <button id="clearBtn" class="btn btn-secondary btn-custom">
+                                        <i class="fas fa-eraser"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Predictions Section -->
+                <div class="prediction-card">
+                    <h3 class="section-title">
+                        <i class="fas fa-lightbulb"></i> Predictions:
+                        <span class="badge bg-success ms-2" id="predictionCount">0</span>
+                    </h3>
+                    <div id="predictions" class="mt-3">
+                        <p class="text-muted">Start typing to see word predictions...</p>
+                    </div>
+                    <div class="loading-spinner" id="predictionLoader">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2">Getting predictions...</p>
+                    </div>
+                </div>
+                
+                <!-- Generated Text Section -->
+                <div class="prediction-card">
+                    <h3 class="section-title">
+                        <i class="fas fa-file-alt"></i> Generated Text:
+                    </h3>
+                    <div id="generatedText" class="generated-text mt-3">
+                        Generated text will appear here...
+                    </div>
+                    <div class="mt-3">
+                        <button id="copyBtn" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-copy"></i> Copy Text
+                        </button>
+                    </div>
+                </div>
+                
+                            </div>
+            </div>
+        </div>
+    </div>
+
+    <script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js\"></script>
+    <script>
+        let currentText = '';
+        
+        // Event listeners
+        document.getElementById('textInput').addEventListener('input', handleTextInput);
+        document.getElementById('predictBtn').addEventListener('click', getPredictions);
+        document.getElementById('generateBtn').addEventListener('click', generateText);
+        document.getElementById('clearBtn').addEventListener('click', clearText);
+        document.getElementById('copyBtn').addEventListener('click', copyGeneratedText);
+        document.getElementById('modelType').addEventListener('change', handleTextInput);
+        
+        function handleTextInput() {
+            currentText = document.getElementById('textInput').value;
+            console.log('Text input changed:', currentText);
+            
+            if (currentText.trim()) {
+                // Add delay to avoid too many requests
+                clearTimeout(window.predictionTimeout);
+                window.predictionTimeout = setTimeout(() => {
+                    console.log('Getting predictions...');
+                    getPredictions();
+                    // Also auto-generate text
+                    generateText();
+                }, 300);
+            } else {
+                document.getElementById('predictions').innerHTML = '<p class="text-muted">Start typing to see word predictions...</p>';
+                document.getElementById('generatedText').textContent = 'Generated text will appear here...';
+                document.getElementById('predictionCount').textContent = '0';
+            }
+        }
+        
+        function clearText() {
+            document.getElementById('textInput').value = '';
+            document.getElementById('predictions').innerHTML = '<p class="text-muted">Start typing to see word predictions...</p>';
+            document.getElementById('generatedText').textContent = 'Generated text will appear here...';
+            document.getElementById('predictionCount').textContent = '0';
+        }
+        
+        function copyGeneratedText() {
+            const text = document.getElementById('generatedText').textContent;
+            if (text && text !== 'Generated text will appear here...') {
+                navigator.clipboard.writeText(text).then(() => {
+                    const btn = document.getElementById('copyBtn');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                    btn.classList.remove('btn-outline-primary');
+                    btn.classList.add('btn-success');
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.classList.remove('btn-success');
+                        btn.classList.add('btn-outline-primary');
+                    }, 2000);
+                });
+            }
+        }
+        
+        async function getPredictions() {
+            const text = document.getElementById('textInput').value;
+            const modelType = document.getElementById('modelType').value;
+            
+            console.log('Getting predictions for:', text, 'Model:', modelType);
+            
+            if (!text.trim()) return;
+            
+            // Show loading spinner
+            document.getElementById('predictionLoader').classList.add('active');
+            document.getElementById('predictions').style.display = 'none';
+            
+            try {
+                let response;
+                if (modelType === 'combined') {
+                    response = await fetch('/suggestions', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            text: text
+                        })
+                    });
+                } else {
+                    response = await fetch('/predict', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            text: text,
+                            model: modelType,
+                            top_k: 5
+                        })
+                    });
+                }
+                
+                console.log('Response status:', response.status);
+                const data = await response.json();
+                console.log('Predictions data:', data);
+                
+                // Hide loading spinner
+                document.getElementById('predictionLoader').classList.remove('active');
+                document.getElementById('predictions').style.display = 'block';
+                
+                if (modelType === 'combined') {
+                    displayCombinedSuggestions(data.suggestions);
+                } else {
+                    displayPredictions(data.predictions);
+                }
+                
+            } catch (error) {
+                console.error('Error getting predictions:', error);
+                document.getElementById('predictionLoader').classList.remove('active');
+                document.getElementById('predictions').style.display = 'block';
+                document.getElementById('predictions').innerHTML = '<p class="text-danger">Error getting predictions. Check console for details.</p>';
+            }
+        }
+        
+        function displayCombinedSuggestions(suggestions) {
+            const container = document.getElementById('predictions');
+            
+            if (suggestions.length === 0) {
+                container.innerHTML = '<p class="text-muted">No suggestions available.</p>';
+                document.getElementById('predictionCount').textContent = '0';
+                return;
+            }
+            
+            container.innerHTML = suggestions.map(sug => 
+                `<span class="prediction-item" onclick="selectWord('${sug.word}')">
+                    ${sug.word}
+                    <span class="probability">(${(sug.probability * 100).toFixed(1)}%)</span>
+                    <small class="text-white-50">[${sug.source}]</small>
+                </span>`
+            ).join('');
+            
+            document.getElementById('predictionCount').textContent = suggestions.length;
+        }
+        
+        function displayPredictions(predictions) {
+            const container = document.getElementById('predictions');
+            
+            if (predictions.length === 0) {
+                container.innerHTML = '<p class="text-muted">No predictions available.</p>';
+                document.getElementById('predictionCount').textContent = '0';
+                return;
+            }
+            
+            container.innerHTML = predictions.map(pred => 
+                `<span class="prediction-item" onclick="selectWord('${pred.word}')">
+                    ${pred.word}
+                    <span class="probability">(${(pred.probability * 100).toFixed(1)}%)</span>
+                </span>`
+            ).join('');
+            
+            document.getElementById('predictionCount').textContent = predictions.length;
+        }
+        
+        function selectWord(word) {
+            const textInput = document.getElementById('textInput');
+            const currentText = textInput.value;
+            
+            // Add the selected word to the text
+            if (currentText.trim() && !currentText.endsWith(' ')) {
+                textInput.value = currentText + ' ' + word;
+            } else {
+                textInput.value = currentText + word;
+            }
+            
+            // Trigger new predictions
+            handleTextInput();
+        }
+        
+        async function generateText() {
+            const startText = document.getElementById('textInput').value;
+            const modelType = document.getElementById('modelType').value;
+            
+            console.log('Generating text for:', startText, 'Model:', modelType);
+            
+            try {
+                const response = await fetch('/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        start_text: startText,
+                        model: modelType,
+                        max_length: 20
+                    })
+                });
+                
+                console.log('Generate response status:', response.status);
+                const data = await response.json();
+                console.log('Generated text data:', data);
+                document.getElementById('generatedText').textContent = data.generated_text;
+            } catch (error) {
+                console.error('Error generating text:', error);
+                document.getElementById('generatedText').textContent = 'Error generating text. Check console for details.';
+            }
+        }
+        
+        async function addCustomWord() {
+            // Function removed - custom dictionary feature disabled
+        }
+        
+        async function removeCustomWord() {
+            // Function removed - custom dictionary feature disabled
+        }
+        
+        async function loadDictionary() {
+            // Function removed - custom dictionary feature disabled
+        }
+        
+        function displayDictionary(words, frequencies) {
+            // Function removed - custom dictionary feature disabled
+        }
+    </script>
+</body>
+</html>
